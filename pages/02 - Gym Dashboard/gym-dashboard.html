@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitCore Gym - Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+        }
+
+        header h1 {
+            font-size: 3em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #a0aec0;
+            font-size: 1.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #a0aec0;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-change {
+            font-size: 0.85em;
+            margin-top: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .stat-change.positive {
+            background: rgba(72, 187, 120, 0.2);
+            color: #68d391;
+        }
+
+        .stat-change.negative {
+            background: rgba(245, 101, 101, 0.2);
+            color: #fc8181;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #e2e8f0;
+        }
+
+        .activity-feed {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .activity-item {
+            padding: 15px;
+            border-left: 3px solid #667eea;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .activity-time {
+            color: #a0aec0;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .activity-text {
+            color: #e2e8f0;
+        }
+
+        .class-schedule {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .class-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .class-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.02);
+        }
+
+        .class-time {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .class-name {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .class-instructor {
+            color: #a0aec0;
+            font-size: 0.9em;
+        }
+
+        .class-capacity {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .capacity-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .capacity-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stat-card, .chart-container, .activity-feed {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💪 FitCore Gym</h1>
+            <p>Real-time Analytics Dashboard</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-label">Active Members</div>
+                <div class="stat-value" id="activeMembers">1,247</div>
+                <div class="stat-change positive">↑ 12.5% from last month</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🏋️</div>
+                <div class="stat-label">Today's Check-ins</div>
+                <div class="stat-value" id="todayCheckins">342</div>
+                <div class="stat-change positive">↑ 8.3% vs yesterday</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-label">Class Attendance Rate</div>
+                <div class="stat-value">87%</div>
+                <div class="stat-change positive">↑ 5.2% this week</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-label">Monthly Revenue</div>
+                <div class="stat-value">€94.2K</div>
+                <div class="stat-change positive">↑ 15.7% vs last month</div>
+            </div>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3 class="chart-title">📈 Member Growth (Last 6 Months)</h3>
+                <canvas id="memberGrowthChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">⏰ Peak Hours Distribution</h3>
+                <canvas id="peakHoursChart"></canvas>
+            </div>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3 class="chart-title">🎯 Membership Types</h3>
+                <canvas id="membershipChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">🔥 Popular Classes</h3>
+                <canvas id="classesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">📅 Today's Class Schedule</h3>
+            <div class="class-schedule">
+                <div class="class-card">
+                    <div class="class-time">6:00 AM - 7:00 AM</div>
+                    <div class="class-name">Morning Yoga</div>
+                    <div class="class-instructor">Instructor: Sarah Chen</div>
+                    <div class="class-capacity">
+                        <small>18/20 spots filled</small>
+                        <div class="capacity-bar">
+                            <div class="capacity-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <div class="class-time">9:00 AM - 10:00 AM</div>
+                    <div class="class-name">HIIT Bootcamp</div>
+                    <div class="class-instructor">Instructor: Marcus Johnson</div>
+                    <div class="class-capacity">
+                        <small>14/15 spots filled</small>
+                        <div class="capacity-bar">
+                            <div class="capacity-fill" style="width: 93%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <div class="class-time">12:00 PM - 1:00 PM</div>
+                    <div class="class-name">Spin Class</div>
+                    <div class="class-instructor">Instructor: Emily Rodriguez</div>
+                    <div class="class-capacity">
+                        <small>22/25 spots filled</small>
+                        <div class="capacity-bar">
+                            <div class="capacity-fill" style="width: 88%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <div class="class-time">5:30 PM - 6:30 PM</div>
+                    <div class="class-name">Strength Training</div>
+                    <div class="class-instructor">Instructor: David Kim</div>
+                    <div class="class-capacity">
+                        <small>11/18 spots filled</small>
+                        <div class="capacity-bar">
+                            <div class="capacity-fill" style="width: 61%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <div class="class-time">7:00 PM - 8:00 PM</div>
+                    <div class="class-name">Zumba</div>
+                    <div class="class-instructor">Instructor: Maria Santos</div>
+                    <div class="class-capacity">
+                        <small>28/30 spots filled</small>
+                        <div class="capacity-bar">
+                            <div class="capacity-fill" style="width: 93%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <div class="class-time">8:00 PM - 9:00 PM</div>
+                    <div class="class-name">Evening Pilates</div>
+                    <div class="class-instructor">Instructor: Lisa Park</div>
+                    <div class="class-capacity">
+                        <small>9/15 spots filled</small>
+                        <div class="capacity-bar">
+                            <div class="capacity-fill" style="width: 60%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="activity-feed">
+            <h3 class="chart-title">📋 Recent Activity</h3>
+            <div class="activity-item">
+                <div class="activity-time">2 minutes ago</div>
+                <div class="activity-text">New member registration: John Anderson signed up for Premium membership</div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-time">15 minutes ago</div>
+                <div class="activity-text">Class milestone: HIIT Bootcamp reached 500 total attendees this month</div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-time">1 hour ago</div>
+                <div class="activity-text">Equipment maintenance: Treadmill #7 scheduled for service tomorrow</div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-time">2 hours ago</div>
+                <div class="activity-text">New personal training package purchased by Rachel Kim</div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-time">3 hours ago</div>
+                <div class="activity-text">Monthly goal achieved: 95% member satisfaction rating</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Member Growth Chart
+        const memberGrowthCtx = document.getElementById('memberGrowthChart').getContext('2d');
+        new Chart(memberGrowthCtx, {
+            type: 'line',
+            data: {
+                labels: ['September', 'October', 'November', 'December', 'January', 'February'],
+                datasets: [{
+                    label: 'Active Members',
+                    data: [952, 1034, 1089, 1156, 1198, 1247],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            color: '#a0aec0'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#a0aec0'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Peak Hours Chart
+        const peakHoursCtx = document.getElementById('peakHoursChart').getContext('2d');
+        new Chart(peakHoursCtx, {
+            type: 'bar',
+            data: {
+                labels: ['6-8 AM', '8-10 AM', '10-12 PM', '12-2 PM', '2-4 PM', '4-6 PM', '6-8 PM', '8-10 PM'],
+                datasets: [{
+                    label: 'Average Check-ins',
+                    data: [145, 89, 67, 112, 78, 198, 234, 156],
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    borderColor: '#667eea',
+                    borderWidth: 2,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#a0aec0'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#a0aec0'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Membership Types Chart
+        const membershipCtx = document.getElementById('membershipChart').getContext('2d');
+        new Chart(membershipCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Premium', 'Standard', 'Basic', 'Day Pass'],
+                datasets: [{
+                    data: [487, 542, 183, 35],
+                    backgroundColor: [
+                        '#667eea',
+                        '#764ba2',
+                        '#f093fb',
+                        '#4facfe'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#a0aec0',
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Popular Classes Chart
+        const classesCtx = document.getElementById('classesChart').getContext('2d');
+        new Chart(classesCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Yoga', 'HIIT', 'Spin', 'Zumba', 'Pilates', 'Strength'],
+                datasets: [{
+                    label: 'Weekly Attendance',
+                    data: [234, 198, 276, 189, 156, 212],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(118, 75, 162, 0.8)',
+                        'rgba(240, 147, 251, 0.8)',
+                        'rgba(79, 172, 254, 0.8)',
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(118, 75, 162, 0.8)'
+                    ],
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#a0aec0'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#a0aec0'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Animate counter for active members
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            const range = end - start;
+            const increment = end > start ? 1 : -1;
+            const stepTime = Math.abs(Math.floor(duration / range));
+            let current = start;
+            const timer = setInterval(function() {
+                current += increment;
+                obj.textContent = current.toLocaleString();
+                if (current == end) {
+                    clearInterval(timer);
+                }
+            }, stepTime);
+        }
+
+        // Trigger animations on load
+        window.addEventListener('load', function() {
+            animateValue('activeMembers', 1000, 1247, 1500);
+            animateValue('todayCheckins', 300, 342, 1200);
+        });
+    </script>
+</body>
+</html>
